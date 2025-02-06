@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import {
   BrowserRouter as Router,
@@ -8,14 +8,13 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import Login from "./components/login";
-import SignUp from "./components/register";
+import Login from "./Auth/login";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Profile from "./components/profile";
+import Profile from "./Auth/profile";
 import { useState } from "react";
-import { auth } from "./components/firebase";
+import { auth } from "./Auth/firebase";
 
 function App() {
   const [user, setUser] = useState();
@@ -35,7 +34,6 @@ function App() {
                 element={user ? <Navigate to="/profile" /> : <Login />}
               />
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<SignUp />} />
               <Route path="/profile" element={<Profile />} />
             </Routes>
             <ToastContainer />
