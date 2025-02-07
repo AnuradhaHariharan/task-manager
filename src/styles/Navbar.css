@@ -1,0 +1,55 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 2px solid #ddd;
+  }
+  .profile {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-direction: column;
+  }
+  
+  .profile img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  .name_photo {
+    display: flex;
+    align-items: anchor-center;
+  }
+  .view-toggle {
+    left: 3.3rem;
+    display: flex;
+    gap: 2.5rem;
+    margin-left: 5px;
+}
+.view-toggle span {
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.view-toggle .active {
+  text-decoration: underline;
+  font-weight: 500;
+  text-underline-offset: 4px;
+}
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  }
+.logout {
+  background-color: #FFF9F9;
+  border: .5px solid #7B1984;
+  padding: .5rem 1.5rem;
+  border-radius: 10px;
+}
+.left-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

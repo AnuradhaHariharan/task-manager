@@ -2,90 +2,64 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
+
 body {
-  /* background: #1c8ef9 !important; */
   min-height: 100vh;
   display: flex;
   font-weight: 400;
   font-family: "Fira Sans", sans-serif;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-label,
-span {
-  font-weight: 500;
-  font-family: "Fira Sans", sans-serif;
-}
-
-body,
-html,
-.App,
-#root,
-.auth-wrapper {
-  width: 100%;
-  height: 100%;
-}
-
-.navbar-light {
-  background-color: #ffffff;
-  box-shadow: 0px 14px 80px rgba(34, 35, 58, 0.2);
-}
-
-.auth-wrapper {
+.login-container {
   display: flex;
-  justify-content: center;
-  flex-direction: column;
-  text-align: left;
-}
+  width: 100vw;  
+  height: 100vh; 
+  background-color: rgb(255, 249, 249);
 
-.auth-inner {
-  width: 450px;
-  margin: auto;
-  background: #ffffff;
-  box-shadow: 0px 14px 80px rgba(34, 35, 58, 0.2);
-  padding: 40px 55px 45px 55px;
-  border-radius: 15px;
-  transition: all 0.3s;
-}
+  .sign-up {
+    flex: 1;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: justify;
+    gap: 1rem;
+  }
 
-.auth-wrapper .form-control:focus {
-  border-color: #167bff;
-  box-shadow: none;
-}
+  .bg-circles {
+    flex: 2; 
+    position: relative;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 
-.auth-wrapper h3 {
-  text-align: center;
-  margin: 0;
-  line-height: 1;
-  padding-bottom: 20px;
-}
+    .circles-bg {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 80%;
+      height: 95%;
+      object-fit: contain;
+      opacity: 0.7;
+      z-index: 1;
+    }
 
-.custom-control-label {
-  font-weight: 400;
+    .task-view {
+      position: absolute;
+      z-index: 2;
+      right: 0;
+      width: 75%;
+      height: 80%;
+      transform: translateY(2rem);
+    }
+  }
 }
-
-.forgot-password,
-.forgot-password a {
-  text-align: right;
-  font-size: 13px;
-  padding-top: 10px;
-  color: #7f7d7d;
-  margin: 0;
-}
-
-.forgot-password a {
-  color: #167bff;
-}
-.continue-p{
-  font-size: 12px;
-    color: #b2b2b2;
-    font-weight: 600;
-    margin-top: 1rem;
-    text-align: center;
+.google_img {
+  cursor: pointer;
 }
