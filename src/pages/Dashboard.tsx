@@ -12,7 +12,6 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <Navbar viewMode={viewMode} setViewMode={setViewMode} />
       {viewMode === "list" ? <TaskListView /> : <TaskBoardView />}
-      <TaskForm />
     </div>
   );
 };

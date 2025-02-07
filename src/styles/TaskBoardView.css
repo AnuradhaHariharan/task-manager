@@ -12,21 +12,7 @@
     background: #eee;
     cursor: pointer;
   }
-  
-  input[type="text"] {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .add-task-btn {
-    background: purple;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
+
   
   .task-board {
     display: flex;
@@ -39,16 +25,18 @@
     background: #f9f9f9;
     border-radius: 8px;
     padding: 15px;
+    height: 90vh;
   }
   
   .task-column-header {
-    padding: 10px;
-    font-weight: bold;
+    padding: .2rem;
+    font-weight: small;
     border-radius: 5px;
+    width: 35%;
   }
   
   .task-column-content {
-    margin-top: 10px;
+    margin-top: 50%;
   }
   
   .task-card {

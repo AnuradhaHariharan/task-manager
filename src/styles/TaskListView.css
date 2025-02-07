@@ -12,22 +12,6 @@
     background: #eee;
     cursor: pointer;
   }
-  
-  input[type="text"] {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .add-task-btn {
-    background: purple;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
   .task-section {
     margin-bottom: 20px;
     border-radius: 8px;
@@ -36,15 +20,22 @@
   
   .task-header {
     padding: 10px;
-    font-weight: bold;
+    font-weight: 300;
+    text-align: justify;
+    display: flex;
+    justify-content: space-between;
   }
   
   .task-content {
     padding: 20px;
     background: #f9f9f9;
+    min-height: 45vh;
   }
   
   .task-card {
+    display: grid;
+    grid-template-columns: .5fr 1.5fr 1fr 1fr 1fr;
+    text-align: left;
     padding: 10px;
     background: white;
     margin-bottom: 10px;
@@ -59,8 +50,9 @@
     filter: grayscale(100%) brightness(50%);
   }
   .headings {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr .5fr 1fr;
+    text-align: left;
     border-top: 0.2px solid rgba(0, 0, 0, 0.6);
     color:rgba(0, 0, 0, 0.6) ;
     padding-top: .3rem;
@@ -69,6 +61,7 @@
   .filter-container {
     display: flex;
     margin-bottom: 1rem;
+    justify-content: space-between;
 
     .left-side {
       display: flex;

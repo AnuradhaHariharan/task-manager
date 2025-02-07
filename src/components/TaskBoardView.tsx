@@ -3,7 +3,7 @@ import { db, auth } from "../Auth/firebase.tsx";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { FaPlus, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import "../styles/TaskBoardView.css"; // Add styles
+import "../styles/TaskBoardView.css"; 
 import Navbar from "./Navbar.tsx";
 
 interface Task {
@@ -15,6 +15,16 @@ interface Task {
   dueDate: string;
 }
 
+// 🔥 Function to normalize Firestore status values
+const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
+  const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
+    "To Do": "Todo",
+    "In Progress": "In-Progress",
+    "Done": "Completed",
+  };
+  return statusMap[status] || "Todo";
+};
+
 const TaskBoardView: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const navigate = useNavigate();
@@ -22,26 +32,36 @@ const TaskBoardView: React.FC = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        console.warn("User not authenticated");
+        return;
+      }
 
+      console.log("Fetching tasks for user:", user.uid);
       const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
 
-      const tasksData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Task[];
+      if (querySnapshot.empty) {
+        console.warn("No tasks found for this user.");
+      }
+
+      const tasksData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          status: normalizeStatus(data.status), // 🔥 Normalize status
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toLocaleDateString() : "No Due Date", // ✅ Convert Firestore Timestamp
+        };
+      });
 
       setTasks(tasksData);
     };
 
     fetchTasks();
   }, []);
-
-  const handleLogout = async () => {
-    await auth.signOut();
-    navigate("/login");
-  };
 
   const renderTaskColumn = (status: "Todo" | "In-Progress" | "Completed", label: string, color: string) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
@@ -69,6 +89,27 @@ const TaskBoardView: React.FC = () => {
 
   return (
     <div className="task-board-view">
+      <div className="filter-container">
+        <div className="left-side">
+          <p>Filter by:</p>
+          <select className="filter-dropdown">
+            <option value="">Category</option>
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+          </select>
+
+          <select className="filter-dropdown">
+            <option value="">Due Date</option>
+            <option value="today">Today</option>
+            <option value="this-week">This Week</option>
+            <option value="this-month">This Month</option>
+          </select>
+        </div>
+        <div className="right-side">
+          <input type="text" placeholder="Search " className="search-input" />
+          <button className="add-task-btn">Add Task</button>
+        </div>
+      </div>
       <div className="task-board">
         {renderTaskColumn("Todo", "TO-DO", "pink")}
         {renderTaskColumn("In-Progress", "IN-PROGRESS", "blue")}
@@ -79,3 +120,4 @@ const TaskBoardView: React.FC = () => {
 };
 
 export default TaskBoardView;
+
