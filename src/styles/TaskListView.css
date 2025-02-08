@@ -37,9 +37,9 @@
     grid-template-columns: .5fr 1.5fr 1fr 1fr 1fr;
     text-align: left;
     padding: 10px;
-    background: white;
     margin-bottom: 10px;
     border-radius: 5px;
+    border-bottom: .5px solid #A7A7A7;;
   }
   
   .pink { background: #f8c6f0; }
@@ -74,4 +74,41 @@
       padding: .5rem;
       border-radius: 20px;
     }
+  }
+  .task-status {
+    width: 6rem;
+    padding: .3rem;
+    background-color: #DDDADD;
+    text-align: center;
+  }
+  .completed-checkbox{
+    width: 1rem;
+  }
+
+  .input-drag {
+    display: flex;
+    justify-content: flex-start;
+    align-items: anchor-center;
+    gap: .5rem;
+  }
+
+  .task-tick {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+}
+  
+  .green-tick {
+    background-color: green;
+    color: white;
+  }
+  
+  .grey-tick {
+    background-color: #A7A7A7;
+    color: white;
+  }
+  .drag-handle {
+    color: #A7A7A7;
   }

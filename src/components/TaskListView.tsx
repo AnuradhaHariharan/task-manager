@@ -17,6 +17,7 @@ interface Task {
   status: "Todo" | "In-Progress" | "Completed";
   dueDate: string;
 }
+
 const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
   const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
     "To Do": "Todo",
@@ -26,28 +27,36 @@ const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" =
   return statusMap[status] || "Todo";
 };
 
-
-const TaskCard = ({ task }: { task: Task }) => {
+const TaskCard = ({ task, updateTaskStatus }: { task: Task; updateTaskStatus: (taskId: string, newStatus: "Todo" | "In-Progress" | "Completed") => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    userSelect: "none",
-    padding: "10px",
-    margin: "5px 0",
-    backgroundColor: "white",
-    borderRadius: "5px",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-  };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="task-card">
-      <FaGripVertical className="drag-handle" />
-      <h5>{task.title}</h5>
+    <div ref={setNodeRef}  className="task-card">
+      {/* ✅ Checkbox to mark task as completed */}
+      <div className="input-drag">
+      <input
+        type="checkbox"
+        className="completed-checkbox"
+        checked={task.status === "Completed"}
+        onChange={() => updateTaskStatus(task.id, "Completed")}
+      />
+      <FaGripVertical className="drag-handle" {...attributes} {...listeners} />
+      <span className={`task-tick ${task.status === "Completed" ? "green-tick" : "grey-tick"}`}>&#10003;</span>
+      </div>
+      <div>
+      <span>{task.title}</span>
+      </div>
+      <div>
       <span>{task.dueDate}</span>
-      <span>{task.status}</span>
+      </div>
+      <div>
+      <span className="task-status">{task.status}</span>
+      </div>
+      <div>
       <span>{task.category}</span>
+      </div>
+     
     </div>
   );
 };
@@ -79,8 +88,8 @@ const TaskListView: React.FC = () => {
           title: data.title,
           description: data.description,
           category: data.category,
-          status: normalizeStatus(data.status), // 🔥 Normalize status
-          dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toLocaleDateString() : "No Due Date", // ✅ Convert Firestore Timestamp
+          status: normalizeStatus(data.status),
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toLocaleDateString() : "No Due Date",
         };
       });
 
@@ -94,6 +103,7 @@ const TaskListView: React.FC = () => {
     try {
       const taskRef = doc(db, "tasks", taskId);
       await updateDoc(taskRef, { status: newStatus });
+
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
       );
@@ -115,8 +125,7 @@ const TaskListView: React.FC = () => {
 
   const renderTaskSection = (status: "Todo" | "In-Progress" | "Completed", color: string) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
-    console.log(`Tasks for ${status}:`, filteredTasks);
-  
+
     return (
       <div className="task-section">
         <div className={`task-header ${color}`} onClick={() => setOpenSections((prev) => ({ ...prev, [status]: !prev[status] }))}>
@@ -129,7 +138,7 @@ const TaskListView: React.FC = () => {
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={filteredTasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
               <div className="task-content">
-                {filteredTasks.length > 0 ? filteredTasks.map((task) => <TaskCard key={task.id} task={task} />) : <p>No Tasks in {status}</p>}
+                {filteredTasks.length > 0 ? filteredTasks.map((task) => <TaskCard key={task.id} task={task} updateTaskStatus={updateTaskStatus} />) : <p>No Tasks in {status}</p>}
               </div>
             </SortableContext>
           </DndContext>
@@ -137,7 +146,6 @@ const TaskListView: React.FC = () => {
       </div>
     );
   };
-  
 
   return (
     <>
@@ -177,5 +185,6 @@ const TaskListView: React.FC = () => {
 };
 
 export default TaskListView;
+
 
 

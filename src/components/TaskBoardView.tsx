@@ -73,10 +73,12 @@ const TaskBoardView: React.FC = () => {
         <div className="task-column-content">
           {filteredTasks.length > 0 ? (
             filteredTasks.map((task) => (
-              <div key={task.id} className="task-card">
-                <h5>{task.title}</h5>
-                <p>{task.description}</p>
-                <span>Category: {task.category}</span> | <span>Due: {task.dueDate}</span>
+              <div key={task.id} className="task-card-b">
+                <span>{task.title}</span>
+                <div className="task-date">
+                <span>{task.category}</span> 
+                <span>{task.dueDate}</span>
+                </div>
               </div>
             ))
           ) : (
