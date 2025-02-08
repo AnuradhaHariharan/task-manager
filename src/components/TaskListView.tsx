@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { db, auth } from "../Auth/firebase.tsx";
 import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { FaChevronDown, FaChevronUp, FaGripVertical } from "react-icons/fa";
@@ -14,12 +17,39 @@ interface Task {
   status: "Todo" | "In-Progress" | "Completed";
   dueDate: string;
 }
-
 const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
-  if (status === "Done") return "Completed";
-  if (status === "To Do") return "Todo";
-  if (status === "In Progress") return "In-Progress";
-  return status as "Todo" | "In-Progress" | "Completed";
+  const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
+    "To Do": "Todo",
+    "In Progress": "In-Progress",
+    "Done": "Completed",
+  };
+  return statusMap[status] || "Todo";
+};
+
+
+const TaskCard = ({ task }: { task: Task }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    userSelect: "none",
+    padding: "10px",
+    margin: "5px 0",
+    backgroundColor: "white",
+    borderRadius: "5px",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="task-card">
+      <FaGripVertical className="drag-handle" />
+      <h5>{task.title}</h5>
+      <span>{task.dueDate}</span>
+      <span>{task.status}</span>
+      <span>{task.category}</span>
+    </div>
+  );
 };
 
 const TaskListView: React.FC = () => {
@@ -28,28 +58,35 @@ const TaskListView: React.FC = () => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-        const tasksData = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title || "Untitled",
-            description: data.description || "No Description",
-            category: data.category || "Uncategorized",
-            status: normalizeStatus(data.status),
-            dueDate: typeof data.dueDate === "string" ? data.dueDate : data.dueDate?.toDate().toLocaleDateString() || "No Due Date",
-          };
-        });
-        setTasks(tasksData);
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn("User not authenticated");
+        return;
       }
+
+      console.log("Fetching tasks for user:", user.uid);
+      const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.warn("No tasks found for this user.");
+      }
+
+      const tasksData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          status: normalizeStatus(data.status), // 🔥 Normalize status
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toLocaleDateString() : "No Due Date", // ✅ Convert Firestore Timestamp
+        };
+      });
+
+      setTasks(tasksData);
     };
+
     fetchTasks();
   }, []);
 
@@ -65,77 +102,42 @@ const TaskListView: React.FC = () => {
     }
   };
 
-  const onDragEnd = (result: any) => {
-    console.log("Drag result:", result);
+  const onDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (!result.destination) {
-      console.log("Dropped outside the list");
-      return;
-    }
+    const oldIndex = tasks.findIndex((task) => task.id === active.id);
+    const newIndex = tasks.findIndex((task) => task.id === over.id);
 
-    const updatedTasks = [...tasks];
-    const [movedTask] = updatedTasks.splice(result.source.index, 1);
-    movedTask.status = result.destination.droppableId as "Todo" | "In-Progress" | "Completed";
-    updatedTasks.splice(result.destination.index, 0, movedTask);
-
+    const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
     setTasks(updatedTasks);
-    updateTaskStatus(movedTask.id, movedTask.status);
   };
 
   const renderTaskSection = (status: "Todo" | "In-Progress" | "Completed", color: string) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
-
+    console.log(`Tasks for ${status}:`, filteredTasks);
+  
     return (
-      <Droppable droppableId={status} key={status}>
-        {(provided) => (
-          <div className="task-section">
-            <div className={`task-header ${color}`} onClick={() => setOpenSections((prev) => ({ ...prev, [status]: !prev[status] }))}>
-              <strong>
-                {status} ({filteredTasks.length})
-              </strong>
-              {openSections[status] ? <FaChevronUp className="chevron-icon" /> : <FaChevronDown className="chevron-icon" />}
-            </div>
-            {openSections[status] && (
-              <div className="task-content" ref={provided.innerRef} {...provided.droppableProps}>
-                {filteredTasks.length > 0 ? (
-                  filteredTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="task-card"
-                          style={{
-                            ...provided.draggableProps.style,
-                            userSelect: "none",
-                            padding: "10px",
-                            margin: "5px 0",
-                            backgroundColor: "white",
-                            borderRadius: "5px",
-                            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-                          }}
-                        >
-                          <FaGripVertical className="drag-handle" />
-                          <h5>{task.title}</h5>
-                          <span>{task.dueDate}</span>
-                          <span>{task.status}</span>
-                          <span>{task.category}</span>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))
-                ) : (
-                  <p>No Tasks in {status}</p>
-                )}
-                {provided.placeholder}
+      <div className="task-section">
+        <div className={`task-header ${color}`} onClick={() => setOpenSections((prev) => ({ ...prev, [status]: !prev[status] }))}>
+          <strong>
+            {status} ({filteredTasks.length})
+          </strong>
+          {openSections[status] ? <FaChevronUp className="chevron-icon" /> : <FaChevronDown className="chevron-icon" />}
+        </div>
+        {openSections[status] && (
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={filteredTasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+              <div className="task-content">
+                {filteredTasks.length > 0 ? filteredTasks.map((task) => <TaskCard key={task.id} task={task} />) : <p>No Tasks in {status}</p>}
               </div>
-            )}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
-      </Droppable>
+      </div>
     );
   };
+  
 
   return (
     <>
@@ -165,18 +167,15 @@ const TaskListView: React.FC = () => {
         <p>Task status</p>
         <p>Task Category</p>
       </div>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="task-list-view">
-          {renderTaskSection("Todo", "pink")}
-          {renderTaskSection("In-Progress", "blue")}
-          {renderTaskSection("Completed", "green")}
-        </div>
-      </DragDropContext>
+      <div className="task-list-view">
+        {renderTaskSection("Todo", "pink")}
+        {renderTaskSection("In-Progress", "blue")}
+        {renderTaskSection("Completed", "green")}
+      </div>
     </>
   );
 };
 
 export default TaskListView;
-
 
 
