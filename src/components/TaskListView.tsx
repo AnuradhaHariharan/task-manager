@@ -4,7 +4,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-ki
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { db, auth } from "../Auth/firebase.tsx";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc,deleteDoc } from "firebase/firestore";
 import { FaChevronDown, FaChevronUp, FaGripVertical } from "react-icons/fa";
 import "../styles/TaskListView.css";
 import TaskForm from "./TaskForm.tsx";
@@ -27,13 +27,13 @@ const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" =
   return statusMap[status] || "Todo";
 };
 
-const TaskCard = ({ task, updateTaskStatus }: { task: Task; updateTaskStatus: (taskId: string, newStatus: "Todo" | "In-Progress" | "Completed") => void }) => {
+const TaskCard = ({ task, updateTaskStatus,deleteTask }: { task: Task; updateTaskStatus: (taskId: string, newStatus: "Todo" | "In-Progress" | "Completed") => void; deleteTask: (taskId: string) => void;  }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
-
-
+  const [isOpen, setIsOpen] = useState(false);
+  
   return (
     <div ref={setNodeRef}  className="task-card">
-      {/* ✅ Checkbox to mark task as completed */}
+      {/*  Checkbox to mark task as completed */}
       <div className="input-drag">
       <input
         type="checkbox"
@@ -45,7 +45,9 @@ const TaskCard = ({ task, updateTaskStatus }: { task: Task; updateTaskStatus: (t
       <span className={`task-tick ${task.status === "Completed" ? "green-tick" : "grey-tick"}`}>&#10003;</span>
       </div>
       <div>
-      <span>{task.title}</span>
+      <span className={`task-text ${task.status === "Completed" ? "completed-task" : ""}`}>
+      {task.title}
+    </span>
       </div>
       <div>
       <span>{task.dueDate}</span>
@@ -53,8 +55,20 @@ const TaskCard = ({ task, updateTaskStatus }: { task: Task; updateTaskStatus: (t
       <div>
       <span className="task-status">{task.status}</span>
       </div>
-      <div>
+      <div className="category-container">
       <span>{task.category}</span>
+      <div className="task-options">
+          <span className="edit-delete" onClick={() => setIsOpen(!isOpen)}>...</span>
+
+          {/* Dropdown Menu */}
+          {isOpen && (
+            <div className="dropdown-menu">
+              <button className="dropdown-item">✏️ Edit</button>
+              <button className="dropdown-item" onClick={() => deleteTask(task.id)}>🗑️ Delete</button>
+            </div>
+          )}
+        </div>
+      
       </div>
      
     </div>
@@ -125,7 +139,14 @@ const TaskListView: React.FC = () => {
 
   const renderTaskSection = (status: "Todo" | "In-Progress" | "Completed", color: string) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
-
+    const deleteTask = async (taskId: string) => {
+      try {
+        await deleteDoc(doc(db, "tasks", taskId)); // Deletes task from Firestore
+        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId)); // Updates state
+      } catch (error) {
+        console.error("Error deleting task:", error);
+      }
+    };
     return (
       <div className="task-section">
         <div className={`task-header ${color}`} onClick={() => setOpenSections((prev) => ({ ...prev, [status]: !prev[status] }))}>
@@ -138,7 +159,7 @@ const TaskListView: React.FC = () => {
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={filteredTasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
               <div className="task-content">
-                {filteredTasks.length > 0 ? filteredTasks.map((task) => <TaskCard key={task.id} task={task} updateTaskStatus={updateTaskStatus} />) : <p>No Tasks in {status}</p>}
+                {filteredTasks.length > 0 ? filteredTasks.map((task) => <TaskCard key={task.id} task={task} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} />) : <p>No Tasks in {status}</p>}
               </div>
             </SortableContext>
           </DndContext>
