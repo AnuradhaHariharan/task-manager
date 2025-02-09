@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../Auth/firebase.tsx";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs,onSnapshot } from "firebase/firestore";
 import { FaPlus, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../styles/TaskBoardView.css"; 
@@ -28,23 +28,26 @@ const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" =
 const TaskBoardView: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const navigate = useNavigate();
+  const [allTasks, setAllTasks] = useState<TaskType[]>([]); 
+  const [taskStatus, setTaskStatus] = useState<string>("");
+
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        console.warn("User not authenticated");
-        return;
-      }
-
-      console.log("Fetching tasks for user:", user.uid);
-      const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("User not authenticated");
+      return;
+    }
+  
+    console.log("Listening for task updates for user:", user.uid);
+    const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
+  
+    // 🔥 Firestore real-time listener
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       if (querySnapshot.empty) {
         console.warn("No tasks found for this user.");
       }
-
+  
       const tasksData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -52,16 +55,37 @@ const TaskBoardView: React.FC = () => {
           title: data.title,
           description: data.description,
           category: data.category,
-          status: normalizeStatus(data.status), // 🔥 Normalize status
-          dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toLocaleDateString() : "No Due Date", // ✅ Convert Firestore Timestamp
+          status: normalizeStatus(data.status),
+          dueDate: data.dueDate?.toDate
+            ? data.dueDate.toDate().toLocaleDateString()
+            : "No Due Date",
         };
       });
-
-      setTasks(tasksData);
-    };
-
-    fetchTasks();
+     setAllTasks(tasksData)  
+    });
+  
+    return () => unsubscribe(); // Cleanup listener when component unmounts
   }, []);
+  useEffect(() => {
+    setTasks(allTasks);
+  }, [allTasks]);
+
+  const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedCategory = event.target.value;
+    console.log(selectedCategory);
+    setTaskStatus(selectedCategory);
+  
+    if (selectedCategory === "" ||selectedCategory==="Category") {
+      // If no category is selected, show all tasks
+      setTasks(allTasks);
+    } else {
+      // Filter tasks based on category
+      const filteredTasks = allTasks.filter(
+        (task) => task.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      setTasks(filteredTasks);
+    }
+  };
 
   const renderTaskColumn = (status: "Todo" | "In-Progress" | "Completed", label: string, color: string) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
@@ -94,8 +118,8 @@ const TaskBoardView: React.FC = () => {
       <div className="filter-container">
         <div className="left-side">
           <p>Filter by:</p>
-          <select className="filter-dropdown">
-            <option value="">Category</option>
+          <select className="filter-dropdown" value={taskStatus} onChange={handleCategoryChange}>
+            <option value="Category">Category</option>
             <option value="work">Work</option>
             <option value="personal">Personal</option>
           </select>

@@ -9,10 +9,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Work");
   const [status, setStatus] = useState("To Do");
+  const [dueDate, setDueDate] = useState(""); // ✅ Added state for due date
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [file, setFile] = useState<File | null>(null);  // ✅ Added file state
+  const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,22 +41,26 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
         fileUrl = await getDownloadURL(storageRef);
       }
 
+      // Convert dueDate string to a timestamp
+      const formattedDueDate = dueDate ? new Date(dueDate) : new Date();
+
       await addDoc(collection(db, "tasks"), {
         title,
         description,
         category,
         status,
         userId: user.uid,
-        attachment: fileUrl, // ✅ Store uploaded file URL
-        dueDate: new Date(),
+        attachment: fileUrl,
+        dueDate: formattedDueDate, // ✅ Store selected due date
       });
 
-      // ✅ Reset form fields
+      // Reset form fields
       setTitle("");
       setDescription("");
       setCategory("Work");
       setStatus("To Do");
       setFile(null);
+      setDueDate(""); // ✅ Reset due date field
       setIsOpen(false);
     } catch (err) {
       setError("Failed to add task. Please try again.");
@@ -74,10 +79,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
         <div className="modal-overlay" onClick={() => setIsOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="form-header">
-            <button className="close-btn" onClick={() => setIsOpen(false)}>
-              &times;
-            </button>
-            <p className="create-task-heading">Create task</p>
+              <button className="close-btn" onClick={() => setIsOpen(false)}>
+                &times;
+              </button>
+              <p className="create-task-heading">Create task</p>
             </div>
             {error && <p className="error-message">{error}</p>}
             <form onSubmit={handleSubmit}>
@@ -92,7 +97,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Task Description"
                 required
+                className="description"
               />
+              <div className="form-info">
               <select value={category} onChange={(e) => setCategory(e.target.value)}>
                 <option value="Work">Work</option>
                 <option value="Personal">Personal</option>
@@ -102,15 +109,24 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
                 <option value="In Progress">In Progress</option>
                 <option value="Done">Done</option>
               </select>
-              
+
+              {/* ✅ Due Date Input */}
+              <input 
+                type="date" 
+                value={dueDate} 
+                onChange={(e) => setDueDate(e.target.value)} 
+                required
+              />
+              </div>
               {/* ✅ File Upload */}
               <input type="file" onChange={handleFileChange} />
               {file && <p>Selected File: {file.name}</p>}
+
               <div className="submit-container">
-              <button className="cancel-btn" onClick={() => setIsOpen(false)}>CANCEL</button>
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "CREATING..." : "CREATE"}
-              </button>
+                <button className="cancel-btn" onClick={() => setIsOpen(false)}>CANCEL</button>
+                <button type="submit" className="submit-btn" disabled={loading}>
+                  {loading ? "CREATING..." : "CREATE"}
+                </button>
               </div>
             </form>
           </div>
@@ -121,5 +137,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
 };
 
 export default TaskForm;
+
 
 

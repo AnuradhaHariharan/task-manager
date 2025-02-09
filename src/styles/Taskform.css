@@ -117,3 +117,10 @@
       padding: .5rem;
       gap: 1rem;
 }
+.form-info {
+  display: flex;
+  gap: 1rem;
+}
+.description {
+  height: 10rem;
+}
