@@ -68,3 +68,109 @@
   background: purple;
   color: white;
 }
+@media (max-width: 1024px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .name_photo {
+    justify-content: center;
+  }
+
+  .view-toggle {
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 10px;
+  }
+
+  .navbar {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 10px;
+  }
+
+  .profile {
+    flex-direction: row;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .view-toggle {
+    gap: 1rem;
+    font-size: 14px;
+  }
+
+  .logout {
+    padding: 0.4rem 1rem;
+    font-size: 14px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.2rem 0.8rem;
+  }
+
+  .add-task-btn {
+    width: 100%;
+    padding: 0.6rem 2rem;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+  }
+
+  .profile {
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    span {
+      display: none;
+    }
+  }
+
+  .profile img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .view-toggle {
+    display: none;
+  }
+
+  .logout {
+    display: none;
+  }
+
+  .search-input {
+    font-size: 12px;
+  }
+
+  .add-task-btn {
+    font-size: 12px;
+    padding: 0.5rem 1.5rem;
+  }
+}

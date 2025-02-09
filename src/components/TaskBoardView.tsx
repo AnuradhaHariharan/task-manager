@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../Auth/firebase.tsx";
-import { collection, query, where, getDocs,onSnapshot } from "firebase/firestore";
-import { FaPlus, FaSignOutAlt } from "react-icons/fa";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "../styles/TaskBoardView.css"; 
+import "../styles/TaskBoardView.css";
 import Navbar from "./Navbar.tsx";
+import TaskModal from "./TaskModal.tsx";
 
 interface Task {
   id: string;
@@ -15,12 +23,14 @@ interface Task {
   dueDate: string;
 }
 
-// 🔥 Function to normalize Firestore status values
-const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
+// 🔥 Normalize Firestore status values
+const normalizeStatus = (
+  status: string
+): "Todo" | "In-Progress" | "Completed" => {
   const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
     "To Do": "Todo",
     "In Progress": "In-Progress",
-    "Done": "Completed",
+    Done: "Completed",
   };
   return statusMap[status] || "Todo";
 };
@@ -28,9 +38,11 @@ const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" =
 const TaskBoardView: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const navigate = useNavigate();
-  const [allTasks, setAllTasks] = useState<TaskType[]>([]); 
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [taskStatus, setTaskStatus] = useState<string>("");
-
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -38,16 +50,16 @@ const TaskBoardView: React.FC = () => {
       console.warn("User not authenticated");
       return;
     }
-  
+
     console.log("Listening for task updates for user:", user.uid);
     const q = query(collection(db, "tasks"), where("userId", "==", user.uid));
-  
+
     // 🔥 Firestore real-time listener
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       if (querySnapshot.empty) {
         console.warn("No tasks found for this user.");
       }
-  
+
       const tasksData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -61,25 +73,25 @@ const TaskBoardView: React.FC = () => {
             : "No Due Date",
         };
       });
-     setAllTasks(tasksData)  
+      setAllTasks(tasksData);
     });
-  
+
     return () => unsubscribe(); // Cleanup listener when component unmounts
   }, []);
+
   useEffect(() => {
     setTasks(allTasks);
   }, [allTasks]);
 
-  const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCategoryChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const selectedCategory = event.target.value;
-    console.log(selectedCategory);
     setTaskStatus(selectedCategory);
-  
-    if (selectedCategory === "" ||selectedCategory==="Category") {
-      // If no category is selected, show all tasks
+
+    if (selectedCategory === "" || selectedCategory === "Category") {
       setTasks(allTasks);
     } else {
-      // Filter tasks based on category
       const filteredTasks = allTasks.filter(
         (task) => task.category.toLowerCase() === selectedCategory.toLowerCase()
       );
@@ -87,27 +99,77 @@ const TaskBoardView: React.FC = () => {
     }
   };
 
-  const renderTaskColumn = (status: "Todo" | "In-Progress" | "Completed", label: string, color: string) => {
+  const toggleDropdown = (taskId: string) => {
+    setOpenDropdownId((prevId) => (prevId === taskId ? null : taskId));
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      await deleteDoc(doc(db, "tasks", taskId));
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveTask = (updatedTask: Task) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+    );
+    setIsModalOpen(false);
+  };
+  
+
+  const renderTaskColumn = (
+    status: "Todo" | "In-Progress" | "Completed",
+    label: string,
+    color: string
+  ) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
+
     return (
       <div className="task-column">
-        <div className={`task-column-header ${color}`}>
-          {label}
-        </div>
+        <div className={`task-column-header ${color}`}>{label}</div>
         <div className="task-column-content">
           {filteredTasks.length > 0 ? (
             filteredTasks.map((task) => (
-              <div key={task.id} className="task-card-b">
-                <span>{task.title}</span>
+              <div key={task.id} className="task-card-b" onClick={() => handleTaskClick(task)}>
+                <div className="task-header-board">
+                  <span
+                    className="edit-delete"
+                    onClick={() => toggleDropdown(task.id)}
+                  >
+                    ...
+                  </span>
+                  {openDropdownId === task.id && (
+                    <div className="dropdown-menu-board">
+                      <button className="dropdown-item">✏️ Edit</button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => deleteTask(task.id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  )}
+                  <span>{task.title}</span>
+                </div>
                 <div className="task-date">
-                <span>{task.category}</span> 
-                <span>{task.dueDate}</span>
+                  <span>{task.category}</span>
+                  <span>{task.dueDate}</span>
                 </div>
               </div>
             ))
           ) : (
             <p>No Tasks in {label}</p>
           )}
+           {isModalOpen && selectedTask && (
+        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} />
+      )}
         </div>
       </div>
     );
@@ -118,7 +180,11 @@ const TaskBoardView: React.FC = () => {
       <div className="filter-container">
         <div className="left-side">
           <p>Filter by:</p>
-          <select className="filter-dropdown" value={taskStatus} onChange={handleCategoryChange}>
+          <select
+            className="filter-dropdown"
+            value={taskStatus}
+            onChange={handleCategoryChange}
+          >
             <option value="Category">Category</option>
             <option value="work">Work</option>
             <option value="personal">Personal</option>

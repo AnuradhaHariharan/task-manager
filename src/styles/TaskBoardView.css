@@ -58,3 +58,22 @@
   .blue { background: #a0d9f6; }
   .green { background: #c2f7a0; }
   
+  .task-header-board{ 
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: baseline;
+    justify-content: flex-start;
+    /* justify-content: space-between; */
+    gap: 8.5rem;
+
+  }
+  .dropdown-menu-board {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
