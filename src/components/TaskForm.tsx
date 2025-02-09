@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { db, auth } from "../Auth/firebase.tsx";
+import { db, auth, storage } from "../Auth/firebase.tsx";
 import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import '../styles/Taskform.css'
 
 const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
@@ -11,7 +12,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+  const [file, setFile] = useState<File | null>(null);  // ✅ Added file state
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -25,20 +33,29 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
     }
 
     try {
+      let fileUrl = "";
+      if (file) {
+        const storageRef = ref(storage, `tasks/${user.uid}/${file.name}`);
+        await uploadBytes(storageRef, file);
+        fileUrl = await getDownloadURL(storageRef);
+      }
+
       await addDoc(collection(db, "tasks"), {
         title,
         description,
         category,
         status,
         userId: user.uid,
+        attachment: fileUrl, // ✅ Store uploaded file URL
         dueDate: new Date(),
       });
 
-      // Reset form fields
+      // ✅ Reset form fields
       setTitle("");
       setDescription("");
       setCategory("Work");
       setStatus("To Do");
+      setFile(null);
       setIsOpen(false);
     } catch (err) {
       setError("Failed to add task. Please try again.");
@@ -56,10 +73,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
       {isOpen && (
         <div className="modal-overlay" onClick={() => setIsOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="form-header">
             <button className="close-btn" onClick={() => setIsOpen(false)}>
               &times;
             </button>
-            <h2>Add New Task</h2>
+            <p className="create-task-heading">Create task</p>
+            </div>
             {error && <p className="error-message">{error}</p>}
             <form onSubmit={handleSubmit}>
               <input
@@ -83,9 +102,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
                 <option value="In Progress">In Progress</option>
                 <option value="Done">Done</option>
               </select>
+              
+              {/* ✅ File Upload */}
+              <input type="file" onChange={handleFileChange} />
+              {file && <p>Selected File: {file.name}</p>}
+              <div className="submit-container">
+              <button className="cancel-btn" onClick={() => setIsOpen(false)}>CANCEL</button>
               <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Adding..." : "Add Task"}
+                {loading ? "CREATING..." : "CREATE"}
               </button>
+              </div>
             </form>
           </div>
         </div>
@@ -95,4 +121,5 @@ const TaskForm: React.FC<TaskFormProps> = ({ show, onClose }) => {
 };
 
 export default TaskForm;
+
 

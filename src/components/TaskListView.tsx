@@ -61,6 +61,10 @@ const TaskCard = ({
     useSortable({ id: task.id });
   const [isOpen, setIsOpen] = useState(false);
 
+  const today = new Date();
+  const formattedDate = new Intl.DateTimeFormat("en-GB").format(today); // "DD/MM/YYYY"
+  console.log(formattedDate);
+
   return (
     <div ref={setNodeRef} className="task-card">
       {/*  Checkbox to mark task as completed */}
@@ -94,7 +98,11 @@ const TaskCard = ({
         </span>
       </div>
       <div>
-        <span>{task.dueDate}</span>
+        {formattedDate==task.dueDate ? (
+          <span>Today</span>
+        ) : (
+          <span>{task.dueDate}</span>
+        )}
       </div>
       <div>
         <span className="task-status">{task.status}</span>
@@ -175,21 +183,28 @@ const TaskListView: React.FC = () => {
     newStatus: "Todo" | "In-Progress" | "Completed"
   ) => {
     try {
+      const statusMap = {
+        Todo: "To Do",
+        "In-Progress": "In Progress",
+        Completed: "Done",
+      };
+      const formattedStatus = statusMap[newStatus];
+
       const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, { status: newStatus });
-  
-      // Update UI
+      await updateDoc(taskRef, { status: formattedStatus });
+
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === taskId ? { ...task, status: newStatus } : task
         )
       );
-  
-      setOpenDropdown(null); // Close dropdown after updating
+
+      setOpenDropdown(null);
     } catch (error) {
       console.error("Error updating task status:", error);
     }
   };
+
   const onDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -358,27 +373,39 @@ const TaskListView: React.FC = () => {
                 </div>
               )}
               {openDropdown === status && (
-  <div className="dropdown-menu-status">
-    <button
-      className="dropdown-item"
-      onClick={() => selectedTasks.forEach((taskId) => updateTaskStatus(taskId, "Todo"))}
-    >
-      Todo
-    </button>
-    <button
-      className="dropdown-item"
-      onClick={() => selectedTasks.forEach((taskId) => updateTaskStatus(taskId, "In-Progress"))}
-    >
-      In-Progress
-    </button>
-    <button
-      className="dropdown-item"
-      onClick={() => selectedTasks.forEach((taskId) => updateTaskStatus(taskId, "Completed"))}
-    >
-      Completed
-    </button>
-  </div>
-)}
+                <div className="dropdown-menu-status">
+                  <button
+                    className="dropdown-item"
+                    onClick={() =>
+                      selectedTasks.forEach((taskId) =>
+                        updateTaskStatus(taskId, "Todo")
+                      )
+                    }
+                  >
+                    Todo
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() =>
+                      selectedTasks.forEach((taskId) =>
+                        updateTaskStatus(taskId, "In-Progress")
+                      )
+                    }
+                  >
+                    In-Progress
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() =>
+                      selectedTasks.forEach((taskId) =>
+                        updateTaskStatus(taskId, "Completed")
+                      )
+                    }
+                  >
+                    Completed
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

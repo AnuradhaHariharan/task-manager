@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
-
+import { getStorage } from "firebase/storage";
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCfI2YtncVVbAcoBi-7CGmf0TkzfH_71wY",
@@ -19,5 +19,6 @@ const app = initializeApp(firebaseConfig);
 // Define types for auth and db
 export const auth: Auth = getAuth();
 export const db: Firestore = getFirestore(app);
+export const storage = getStorage(app);
 
 export default app;
