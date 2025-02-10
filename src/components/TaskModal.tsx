@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import "../styles/TaskModal.css"; // Create styles as needed
+import React, { useState, useEffect } from "react";
+import { db } from "../Auth/firebase.tsx"; // Adjust the import path based on your setup
+import { doc, updateDoc } from "firebase/firestore";
+import "../styles/TaskModal.css";
 
 interface Task {
   id: string;
@@ -8,7 +10,15 @@ interface Task {
   category: string;
   status: "Todo" | "In-Progress" | "Completed";
   dueDate: string;
-  attachment?: string; // Optional field for attachments
+  attachment?: string;
+  lastUpdated?: string;
+  createdAt: string;
+  changeLog?: {
+    field: string;
+    oldValue: string;
+    newValue: string;
+    time: string;
+  }[];
 }
 
 interface TaskModalProps {
@@ -18,21 +28,73 @@ interface TaskModalProps {
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
-  const [editedTask, setEditedTask] = useState<Task | null>(task);
+  const [editedTask, setEditedTask] = useState<Task | null>(null);
+  const [pendingChanges, setPendingChanges] = useState<Partial<Task>>({});
+  const [changeLog, setChangeLog] = useState<Task["changeLog"]>([]);
 
-  if (!task) return null;
+  useEffect(() => {
+    if (task) {
+      setEditedTask({ ...task });
+      setChangeLog(task.changeLog || []);
+      setPendingChanges({}); // Reset pending changes
+    }
+  }, [task]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditedTask((prev) =>
-      prev ? { ...prev, [e.target.name]: e.target.value } : null
-    );
+  if (!task || !editedTask) return null;
+
+  const formatDate = (date: string | number | Date) =>
+    new Date(date).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setPendingChanges((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editedTask) {
-      onSave(editedTask);
+      const timestamp = new Date().toISOString(); // Firestore format
+  
+      // Ensure the changes from pendingChanges are applied to the editedTask
+      const updatedTask: Task = {
+        ...editedTask, // Keep previous task data
+        ...pendingChanges, // Apply pending changes
+        lastUpdated: timestamp, // Update timestamp
+        changeLog: [
+          ...changeLog,
+          ...Object.keys(pendingChanges).map((field) => ({
+            field,
+            oldValue: (editedTask as any)[field] || "N/A",
+            newValue: (pendingChanges as any)[field],
+            time: timestamp,
+          })),
+        ],
+      };
+  
+      try {
+        const taskRef = doc(db, "tasks", editedTask.id); // Firestore reference
+        console.log("Updating task:", updatedTask); // Check the updated task before sending to Firestore
+  
+        // Update Firestore with the updated task
+        await updateDoc(taskRef, updatedTask);
+  
+        onSave(updatedTask); // Update local state/UI
+        onClose(); // Close modal after saving
+      } catch (error) {
+        console.error("Error updating task:", error);
+      }
     }
   };
+  
 
   return (
     <div className="modal-overlay">
@@ -41,42 +103,56 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
           ✖
         </button>
         <div className="modal-body">
-          {/* Left Side - Task Details */}
+          {/* Left Side - Scrollable Task Edit Form */}
           <div className="task-edit-form">
             <h3>Edit Task</h3>
-            <input
-              type="text"
-              name="title"
-              value={editedTask?.title || ""}
-              onChange={handleChange}
-            />
-            <textarea
-              name="description"
-              value={editedTask?.description || ""}
-              onChange={handleChange}
-            />
-            <select name="status" value={editedTask?.status || ""} onChange={handleChange}>
-              <option value="Todo">Todo</option>
-              <option value="In-Progress">In-Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
+            <div className="scrollable-content">
+              <input
+                type="text"
+                name="title"
+                defaultValue={editedTask.title}
+                onChange={handleChange}
+              />
+              <textarea
+                name="description"
+                defaultValue={editedTask.description}
+                onChange={handleChange}
+              />
+              <select
+                name="status"
+                defaultValue={editedTask.status}
+                onChange={handleChange}
+              >
+                <option value="Todo">Todo</option>
+                <option value="In-Progress">In-Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
           </div>
-          {/* Right Side - Edit Form */}
+
+          {/* Right Side - Activity Log */}
           <div className="task-details">
-            <h2>{task.title}</h2>
-            <p><strong>Category:</strong> {task.category}</p>
-            <p><strong>Status:</strong> {task.status}</p>
-            <p><strong>Due Date:</strong> {task.dueDate}</p>
-            <p><strong>Description:</strong> {task.description}</p>
-            {task.attachment && (
-              <div>
-                <strong>Attachment:</strong>
-                <a href={task.attachment} target="_blank" rel="noopener noreferrer">
-                  View File
-                </a>
+            <h4 className="activity">Activity</h4>
+            <div className="task-creation">
+              <p>You created this task</p>
+              <p>{formatDate(task.createdAt)}</p> {/* Format createdAt */}
+            </div>
+
+            {changeLog.length > 0 && (
+              <div className="change-log">
+                {changeLog.map((log, index) => (
+                  <div key={index} className="change-entry">
+                    <p>
+                      You changed {log.field} from {log.oldValue} to{" "}
+                      {log.newValue}
+                    </p>
+                    <p className="change-time">({formatDate(log.time)})</p>
+                  </div>
+                ))}
               </div>
             )}
-             <button onClick={handleSave}>Save Changes</button>
+
+            <button onClick={handleSave}>Save Changes</button>
           </div>
         </div>
       </div>
@@ -85,3 +161,4 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
 };
 
 export default TaskModal;
+

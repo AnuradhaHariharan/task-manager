@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/TaskBoardView.css";
 import Navbar from "./Navbar.tsx";
 import TaskModal from "./TaskModal.tsx";
+import TaskForm from "./TaskForm.tsx";
 
 interface Task {
   id: string;
@@ -21,6 +22,8 @@ interface Task {
   category: string;
   status: "Todo" | "In-Progress" | "Completed";
   dueDate: string;
+  lastUpdated?: string;
+  createdAt: string;
 }
 
 // 🔥 Normalize Firestore status values
@@ -71,6 +74,12 @@ const TaskBoardView: React.FC = () => {
           dueDate: data.dueDate?.toDate
             ? data.dueDate.toDate().toLocaleDateString()
             : "No Due Date",
+          lastUpdated: data.lastUpdated?.toDate 
+            ? data.lastUpdated.toDate().toISOString()
+            : undefined,
+          createdAt: data.createdAt?.toDate 
+        ? data.createdAt.toDate().toISOString()
+        : new Date().toISOString(),
         };
       });
       setAllTasks(tasksData);
@@ -116,13 +125,16 @@ const TaskBoardView: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveTask = (updatedTask: Task) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-    );
-    setIsModalOpen(false);
-  };
-  
+ const handleSaveTask = (updatedTask: Task) => {
+  const timestamp = new Date().toLocaleString(); // Capture current date and time
+  setTasks((prevTasks) =>
+    prevTasks.map((task) =>
+      task.id === updatedTask.id ? { ...updatedTask, lastUpdated: timestamp } : task
+    )
+  );
+  setIsModalOpen(false);
+};
+
 
   const renderTaskColumn = (
     status: "Todo" | "In-Progress" | "Completed",
@@ -137,11 +149,12 @@ const TaskBoardView: React.FC = () => {
         <div className="task-column-content">
           {filteredTasks.length > 0 ? (
             filteredTasks.map((task) => (
-              <div key={task.id} className="task-card-b" onClick={() => handleTaskClick(task)}>
+              <div key={task.id} className="task-card-b" >
                 <div className="task-header-board">
                   <span
                     className="edit-delete"
                     onClick={() => toggleDropdown(task.id)}
+                   
                   >
                     ...
                   </span>
@@ -156,7 +169,7 @@ const TaskBoardView: React.FC = () => {
                       </button>
                     </div>
                   )}
-                  <span>{task.title}</span>
+                  <span onClick={() => handleTaskClick(task)} className="task-title">{task.title}</span>
                 </div>
                 <div className="task-date">
                   <span>{task.category}</span>
@@ -168,7 +181,7 @@ const TaskBoardView: React.FC = () => {
             <p>No Tasks in {label}</p>
           )}
            {isModalOpen && selectedTask && (
-        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} />
+        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} createdAt={tasks.createdAt}/>
       )}
         </div>
       </div>
@@ -199,7 +212,7 @@ const TaskBoardView: React.FC = () => {
         </div>
         <div className="right-side">
           <input type="text" placeholder="Search " className="search-input" />
-          <button className="add-task-btn">Add Task</button>
+          <TaskForm />
         </div>
       </div>
       <div className="task-board">

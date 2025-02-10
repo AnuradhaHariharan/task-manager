@@ -21,6 +21,7 @@ import {
 import { FaChevronDown, FaChevronUp, FaGripVertical } from "react-icons/fa";
 import "../styles/TaskListView.css";
 import TaskForm from "./TaskForm.tsx";
+import TaskModal from "./TaskModal.tsx";
 
 interface Task {
   id: string;
@@ -61,7 +62,6 @@ const TaskCard = ({
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id });
   const [isOpen, setIsOpen] = useState(false);
-
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat("en-GB").format(today); // "DD/MM/YYYY"
   console.log(formattedDate);
@@ -182,7 +182,9 @@ const TaskListView: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    setTasks(allTasks);
+    if (allTasks.length !== tasks.length) {
+      setTasks(allTasks);
+    }
   }, [allTasks]);
 
   const updateTaskStatus = async (
@@ -312,6 +314,7 @@ const TaskListView: React.FC = () => {
                     <TaskCard
                       key={task.id}
                       task={task}
+                      
                       updateTaskStatus={updateTaskStatus}
                       deleteTask={deleteTask}
                       toggleTaskSelection={toggleTaskSelection}

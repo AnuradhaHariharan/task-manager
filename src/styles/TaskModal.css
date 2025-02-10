@@ -106,4 +106,21 @@
       transform: translateY(0);
     }
   }
-  
+  .activity {
+    text-align: left;
+  }
+  .task-creation {
+    display: flex;
+    justify-content: space-between;
+    p {
+      font-size: .8rem;
+    }
+  }
+  .change-entry {
+    display: flex;
+    justify-content: space-between;
+
+    p{
+      font-size: .8rem;
+    }
+  }
