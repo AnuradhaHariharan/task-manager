@@ -32,15 +32,16 @@ interface Task {
   dueDate: string;
 }
 
-const normalizeStatus = (
-  status: string
-): "Todo" | "In-Progress" | "Completed" => {
+const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
   const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
     "To Do": "Todo",
-    "In Progress": "In-Progress",
+    "In-Progress": "In-Progress",
     Done: "Completed",
+    "Completed": "Completed",
   };
-  return statusMap[status] || "Todo";
+  const normalizedStatus = statusMap[status] || "Todo"; // Default to "Todo" if unrecognized
+  console.log('Original Status:', status, 'Mapped Status:', normalizedStatus); // Debug log
+  return normalizedStatus;
 };
 
 const TaskCard = ({
@@ -49,6 +50,7 @@ const TaskCard = ({
   deleteTask,
   toggleTaskSelection,
   selectedTasks,
+  handleTaskClick
 }: {
   task: Task;
   updateTaskStatus: (
@@ -57,7 +59,7 @@ const TaskCard = ({
   ) => void;
   deleteTask: (taskId: string) => void;
   toggleTaskSelection: (taskId: string) => void;
-  selectedTasks: string[];
+  selectedTasks: string[];handleTaskClick:(task:Task)=>void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id });
@@ -94,6 +96,7 @@ const TaskCard = ({
           className={`task-text ${
             task.status === "Completed" ? "completed-task" : ""
           }`}
+          onClick={() => handleTaskClick(task)}
         >
           {task.title}
         </span>
@@ -144,7 +147,8 @@ const TaskListView: React.FC = () => {
   });
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [taskStatus, setTaskStatus] = useState<string>("");
-
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) {
@@ -169,9 +173,7 @@ const TaskListView: React.FC = () => {
           description: data.description,
           category: data.category,
           status: normalizeStatus(data.status),
-          dueDate: data.dueDate?.toDate
-            ? data.dueDate.toDate().toLocaleDateString()
-            : "No Due Date",
+          dueDate: typeof data.dueDate === "string" ? data.dueDate : "No Due Date",
         };
       });
      setAllTasks(tasksData)  
@@ -230,7 +232,10 @@ const TaskListView: React.FC = () => {
       setTasks(filteredTasks);
     }
   };
-  
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
 
   const onDragEnd = (event: any) => {
     const { active, over } = event;
@@ -282,7 +287,20 @@ const TaskListView: React.FC = () => {
             : [...prevSelected, taskId] // Add if not selected
       );
     };
-
+    const handleSaveTask = async (updatedTask: Task) => {
+      try {
+        const taskRef = doc(db, "tasks", updatedTask.id);
+        await updateDoc(taskRef, updatedTask);
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === updatedTask.id ? { ...updatedTask } : task
+          )
+        );
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error("Error updating task:", error);
+      }
+    };
     // Function to delete selected tasks
 
     return (
@@ -313,12 +331,12 @@ const TaskListView: React.FC = () => {
                   filteredTasks.map((task) => (
                     <TaskCard
                       key={task.id}
-                      task={task}
-                      
+                      task={task}  
                       updateTaskStatus={updateTaskStatus}
                       deleteTask={deleteTask}
                       toggleTaskSelection={toggleTaskSelection}
                       selectedTasks={selectedTasks}
+                      handleTaskClick={handleTaskClick}
                     />
                   ))
                 ) : (
@@ -328,6 +346,9 @@ const TaskListView: React.FC = () => {
             </SortableContext>
           </DndContext>
         )}
+       {isModalOpen && selectedTask && (
+        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} createdAt={selectedTask.createdAt}/>
+      )}
       </div>
     );
   };

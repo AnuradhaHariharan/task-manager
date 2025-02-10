@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../Auth/firebase.tsx"; // Adjust the import path based on your setup
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc,arrayUnion ,getDoc} from "firebase/firestore";
 import "../styles/TaskModal.css";
 
 interface Task {
@@ -33,13 +33,24 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
   const [changeLog, setChangeLog] = useState<Task["changeLog"]>([]);
 
   useEffect(() => {
-    if (task) {
-      setEditedTask({ ...task });
-      setChangeLog(task.changeLog || []);
-      setPendingChanges({}); // Reset pending changes
-    }
-  }, [task]);
-
+    const fetchTask = async () => {
+      if (task) {
+        try {
+          const taskRef = doc(db, "tasks", task.id);
+          const taskSnap = await getDoc(taskRef);
+          if (taskSnap.exists()) {
+            const updatedTask = taskSnap.data() as Task;
+            setEditedTask(updatedTask);
+            setChangeLog(updatedTask.changeLog || []);
+          }
+        } catch (error) {
+          console.error("Error fetching task:", error);
+        }
+      }
+    };
+  
+    fetchTask();
+  }, [task]); 
   if (!task || !editedTask) return null;
 
   const formatDate = (date: string | number | Date) =>
@@ -62,40 +73,59 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
 
   const handleSave = async () => {
     if (editedTask) {
-      const timestamp = new Date().toISOString(); // Firestore format
+      const timestamp = new Date().toISOString();
   
-      // Ensure the changes from pendingChanges are applied to the editedTask
-      const updatedTask: Task = {
-        ...editedTask, // Keep previous task data
-        ...pendingChanges, // Apply pending changes
-        lastUpdated: timestamp, // Update timestamp
-        changeLog: [
-          ...changeLog,
-          ...Object.keys(pendingChanges).map((field) => ({
-            field,
-            oldValue: (editedTask as any)[field] || "N/A",
-            newValue: (pendingChanges as any)[field],
-            time: timestamp,
-          })),
-        ],
-      };
+      // Map pending changes into changeLog entries
+      const newChangeLogEntries = Object.keys(pendingChanges).map((field) => ({
+        field,
+        oldValue: (editedTask as any)[field] || "N/A",
+        newValue: (pendingChanges as any)[field],
+        time: timestamp,
+      }));
   
       try {
-        const taskRef = doc(db, "tasks", editedTask.id); // Firestore reference
-        console.log("Updating task:", updatedTask); // Check the updated task before sending to Firestore
+        const taskRef = doc(db, "tasks", editedTask.id);
   
-        // Update Firestore with the updated task
-        await updateDoc(taskRef, updatedTask);
+        // Update Firestore using arrayUnion to append changeLog instead of replacing it
+        await updateDoc(taskRef, {
+          ...pendingChanges, // Update only changed fields
+          lastUpdated: timestamp,
+          changeLog: arrayUnion(...newChangeLogEntries),
+        });
   
-        onSave(updatedTask); // Update local state/UI
-        onClose(); // Close modal after saving
+        // Update local state
+        const updatedTask: Task = {
+          ...editedTask,
+          ...pendingChanges,
+          lastUpdated: timestamp,
+          changeLog: [...changeLog, ...newChangeLogEntries],
+        };
+  
+        onSave(updatedTask); // Update UI
+        onClose(); // Close modal
       } catch (error) {
         console.error("Error updating task:", error);
       }
     }
   };
+  const convertToISODate = (dateStr: string) => {
+    if (!dateStr) return ""; // Handle empty value
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to YYYY-MM-DD
+      const dateObj = new Date(formattedDate);
+      return !isNaN(dateObj.getTime())
+        ? dateObj.toISOString().split("T")[0]
+        : "";
+    }
+    return "";
+  };
+  const handleCancel = () => {
+    setPendingChanges({}); // Reset changes
+    setEditedTask(task); // Revert to original task
+    onClose(); // Close modal
+  };
   
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -127,11 +157,27 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
                 <option value="In-Progress">In-Progress</option>
                 <option value="Completed">Completed</option>
               </select>
+
+              {/* Date Input for Due Date */}
+              <input
+                type="date"
+                name="dueDate"
+                defaultValue={convertToISODate(editedTask.dueDate)}
+                onChange={handleChange}
+              />
+
+              {/* File Input for Attachments */}
+              <input
+                type="file"
+                name="attachment"
+                onChange={handleChange}
+              />
             </div>
           </div>
 
           {/* Right Side - Activity Log */}
           <div className="task-details">
+            <div>
             <h4 className="activity">Activity</h4>
             <div className="task-creation">
               <p>You created this task</p>
@@ -151,8 +197,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
                 ))}
               </div>
             )}
-
-            <button onClick={handleSave}>Save Changes</button>
+             </div>
+             <div className="buttons">
+              <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+             <button onClick={handleSave} className="submit-btn">Update</button>
+             </div>
+           
           </div>
         </div>
       </div>
@@ -161,4 +211,3 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
 };
 
 export default TaskModal;
-

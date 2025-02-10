@@ -31,7 +31,7 @@ interface Task {
 const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
   const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
     "To Do": "Todo",
-    "In Progress": "In-Progress",
+    "In-Progress": "In-Progress",
     Done: "Completed",
     "Completed": "Completed",
   };
@@ -74,9 +74,7 @@ const TaskBoardView: React.FC = () => {
           description: data.description,
           category: data.category,
           status: normalizeStatus(data.status),
-          dueDate: data.dueDate?.toDate
-            ? data.dueDate.toDate().toLocaleDateString()
-            : "No Due Date",
+          dueDate: typeof data.dueDate === "string" ? data.dueDate : "No Due Date",        
           lastUpdated: data.lastUpdated?.toDate 
             ? data.lastUpdated.toDate().toISOString()
             : undefined,
