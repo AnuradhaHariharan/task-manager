@@ -8,6 +8,7 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
+  updateDoc
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../styles/TaskBoardView.css";
@@ -27,16 +28,18 @@ interface Task {
 }
 
 // 🔥 Normalize Firestore status values
-const normalizeStatus = (
-  status: string
-): "Todo" | "In-Progress" | "Completed" => {
+const normalizeStatus = (status: string): "Todo" | "In-Progress" | "Completed" => {
   const statusMap: Record<string, "Todo" | "In-Progress" | "Completed"> = {
     "To Do": "Todo",
     "In Progress": "In-Progress",
     Done: "Completed",
+    "Completed": "Completed",
   };
-  return statusMap[status] || "Todo";
+  const normalizedStatus = statusMap[status] || "Todo"; // Default to "Todo" if unrecognized
+  console.log('Original Status:', status, 'Mapped Status:', normalizedStatus); // Debug log
+  return normalizedStatus;
 };
+
 
 const TaskBoardView: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -91,6 +94,11 @@ const TaskBoardView: React.FC = () => {
   useEffect(() => {
     setTasks(allTasks);
   }, [allTasks]);
+  
+  useEffect(() => {
+    console.log(tasks);
+  }, [tasks]);
+  
 
   const handleCategoryChange = (
     event: React.ChangeEvent<HTMLSelectElement>
@@ -125,16 +133,21 @@ const TaskBoardView: React.FC = () => {
     setIsModalOpen(true);
   };
 
- const handleSaveTask = (updatedTask: Task) => {
-  const timestamp = new Date().toLocaleString(); // Capture current date and time
-  setTasks((prevTasks) =>
-    prevTasks.map((task) =>
-      task.id === updatedTask.id ? { ...updatedTask, lastUpdated: timestamp } : task
-    )
-  );
-  setIsModalOpen(false);
-};
-
+  const handleSaveTask = async (updatedTask: Task) => {
+    try {
+      const taskRef = doc(db, "tasks", updatedTask.id);
+      await updateDoc(taskRef, updatedTask);
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === updatedTask.id ? { ...updatedTask } : task
+        )
+      );
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  };
+  
 
   const renderTaskColumn = (
     status: "Todo" | "In-Progress" | "Completed",
@@ -181,7 +194,7 @@ const TaskBoardView: React.FC = () => {
             <p>No Tasks in {label}</p>
           )}
            {isModalOpen && selectedTask && (
-        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} createdAt={tasks.createdAt}/>
+        <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} createdAt={selectedTask.createdAt}/>
       )}
         </div>
       </div>
