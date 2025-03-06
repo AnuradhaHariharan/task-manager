@@ -142,6 +142,15 @@ const TaskForm: React.FC = () => {
     if (uploadTask) {
       uploadTask.cancel(); // Cancel ongoing upload
     }
+      // Reset form fields
+      setTitle("");
+      setDescription("");
+      setCategory("Work");
+      setStatus("To Do");
+      setFile(null);
+      setDueDate("");
+      setUploadProgress(0);
+      setIsOpen(false);
     setIsOpen(false);
     setLoading(false);
   };

@@ -62,6 +62,12 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: auto;
+    height: 25rem;
+  }
+
+  .right-side-form {
+    width: 50%;
   }
   
   .task-edit-form {
@@ -116,19 +122,53 @@
     display: flex;
     justify-content: space-between;
     p {
-      font-size: .8rem;
+      font-size: .7rem;
     }
   }
   .change-entry {
     display: flex;
-    justify-content: space-between;
+  text-align: left;
+  justify-content: space-between;
 
     p{
-      font-size: .8rem;
+      font-size: .7rem;
     }
   }
   .buttons {
     display: flex;
     justify-content: center;
     gap: 1rem;
+    margin-top: 1rem;
+  }
+  @media screen and (max-width: 800px) {
+.modal-content{
+  width: 90%;
+  height: 80%;
+  padding: 10px;
+}
+.modal-body{
+ display: flex;
+}
+.task-edit-form{
+  padding: 0;
+}
+.task-details {
+  padding: 1rem;
+  width: 90%;
+}
+.activity{
+  font-size: .8rem;
+}
+.task-edit-form input, .task-edit-form textarea, .task-edit-form select {
+  font-size: .5rem;
+}
+.buttons {
+
+}
+
+.cancel-btn,.submit-btn{
+  padding: .2rem .5rem;
+  font-size: .5rem;
+  border-radius: 15px;
+}
   }

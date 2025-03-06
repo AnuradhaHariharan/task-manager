@@ -63,3 +63,48 @@ body {
 .google_img {
   cursor: pointer;
 }
+
+@media screen and (max-width: 800px) {
+  .bg-circles {
+    display: none !important;
+  }
+  .sign-up {
+    align-items: anchor-center !important;
+    padding: 2rem !important;
+  }
+
+  .logo {
+    display: flex
+;
+    flex-direction: column;
+    align-items: baseline;
+    img{
+      height: 50%;
+    }
+    p {
+      font-size: 1.2rem;
+      white-space: nowrap !important;
+    }
+  }
+  .google_img {
+
+    width: 100% !important;
+
+    img {
+      width: 100% !important;
+    }
+  }
+
+
+}
+@media screen and (max-width: 600px) {
+  .logo {
+    img{
+      height: 50%;
+    }
+    p {
+      font-size: 1.2rem;
+    }
+  }
+
+}

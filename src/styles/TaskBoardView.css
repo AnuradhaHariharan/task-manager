@@ -25,7 +25,8 @@
     background: #f9f9f9;
     border-radius: 8px;
     padding: 15px;
-    min-height: 90vh;
+    height: 90vh;
+    overflow: auto;
   }
   
   .task-column-header {
@@ -79,9 +80,74 @@
     z-index: 10;
     position: absolute;
     top: 2rem;
-    left: 22rem;
+    left: 18rem;
 }
 
 .task-title {
   cursor: pointer;
+}
+
+@media screen and (max-width: 800px) {
+
+  p {
+    font-size: .8rem;
+  }
+
+  .task-column-header {
+    font-size: .8rem;
+    width: 80%;
+  }
+  .task-card-b {
+font-size: .8rem;
+  }
+  .task-header-board {
+    gap: 0;
+    justify-content: space-between;
+  }
+
+.dropdown-menu-board {
+  left: 4rem;
+}
+
+}
+
+@media screen and (max-width: 600px) {
+
+  .task-column-content {
+    p {
+      font-size: .5rem;
+    }
+
+  }
+  .task-board {
+    margin-bottom: 0;
+}
+.task-column-header {
+ font-size: .5rem;
+}
+.task-card-b{
+  font-size: .5rem;
+  height: 10%;
+  border-radius: 10px;
+  width: 100%;
+}
+
+
+}
+
+@media (max-width: 480px) {
+
+  .task-board{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .task-column {
+    width: 100%;
+  }
+  .task-column-header {
+    font-size: .7rem;
+    width: 100%;
+}
+
 }

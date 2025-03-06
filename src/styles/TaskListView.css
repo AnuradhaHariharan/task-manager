@@ -131,6 +131,7 @@
   .task-options {
     position: relative;
     display: inline-block;
+    bottom: 25%;
   }
   
   .dropdown-menu {
@@ -224,4 +225,67 @@
     .dropdown-item:hover {
       color: black;
     }
+    .task-options {
+      bottom: 40%;
+    }
+
   }
+
+  @media screen and (max-width: 800px) {
+  .input-drag{
+    align-items: baseline;
+    margin-right: 1rem;
+  }
+  @media screen and (max-width: 600px) {
+    .task-card {
+       font-size: .7rem;
+    }
+    .task-tick {
+      height: 15px;
+      width: 15px;
+    }
+    .task-options {
+      bottom: 40%;
+    }
+
+
+  }
+
+}
+@media screen and (max-width: 600px) {
+
+  .headings{
+ p{
+  font-size: .5rem;
+ }
+}
+.task-card {
+  font-size: .6rem;
+}
+.task-tick {
+  height: 12px;
+  width: 12px;
+}
+.task-status{
+  font-size: .5rem;
+}
+
+
+}
+
+@media (max-width: 480px) {
+  .task-header {
+    font-size: .7rem;
+  }
+  .task-card {
+    font-size: .5rem;
+    gap: .3rem;
+    align-items: flex-start;
+  }
+  .input-drag {
+    gap: .1rem;
+  }
+ .dropdown-menu {
+  
+ }
+}
