@@ -25,8 +25,8 @@ function SignInwithGoogle() {
   }
   return (
     <div className="google_img">
-    <img src="/google_login.svg" alt="Google Sign-In"
-        onClick={googleLogin}/>
+  <img className="task-view" src={`${process.env.PUBLIC_URL}/google_login.svg`} alt="Google login"  onClick={googleLogin}/>
+
     </div>
   );
 }

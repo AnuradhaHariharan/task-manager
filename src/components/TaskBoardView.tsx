@@ -134,7 +134,15 @@ const TaskBoardView: React.FC = () => {
   const handleSaveTask = async (updatedTask: Task) => {
     try {
       const taskRef = doc(db, "tasks", updatedTask.id);
-      await updateDoc(taskRef, updatedTask);
+      await updateDoc(taskRef, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        category: updatedTask.category,
+        status: updatedTask.status,
+        dueDate: updatedTask.dueDate,
+        lastUpdated: new Date(), // Optional: update the timestamp
+      });
+      
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === updatedTask.id ? { ...updatedTask } : task
@@ -153,6 +161,30 @@ const TaskBoardView: React.FC = () => {
     color: string
   ) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
+
+    const formatDueDate = (dueDate: string) => {
+      if (!dueDate) return "Invalid Date"; // Handle missing date
+    
+      // Parse "DD-MM-YYYY" string to a proper Date object
+      const [day, month, year] = dueDate.split("-").map(Number);
+      const taskDueDate = new Date(year, month - 1, day); // Month is 0-based in JS Dates
+    
+      if (isNaN(taskDueDate.getTime())) return "Invalid Date"; // Handle invalid date input
+    
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to midnight
+      taskDueDate.setHours(0, 0, 0, 0); // Reset time to midnight
+    
+      const diffInDays = Math.floor((taskDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+      if (diffInDays === 0) return "Today";
+      if (diffInDays === 1) return "Tomorrow";
+      if (diffInDays < 0) return "❗ Overdue";
+    
+      return dueDate; // Return in "DD-MM-YYYY" format
+    };
+    
+
 
     return (
       <div className="task-column">
@@ -184,7 +216,7 @@ const TaskBoardView: React.FC = () => {
                 </div>
                 <div className="task-date">
                   <span>{task.category}</span>
-                  <span>{task.dueDate}</span>
+                  <span>{formatDueDate(task.dueDate)}</span>
                 </div>
               </div>
             ))

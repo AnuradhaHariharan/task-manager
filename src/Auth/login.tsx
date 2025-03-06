@@ -7,7 +7,7 @@ const Login: React.FC = () => {
       {/* Left Side - Sign Up Section */}
       <div className="sign-up">
         <div className="logo">
-          <img src="/logo.svg" alt="Logo" />
+        <img src={`${process.env.PUBLIC_URL}/logo.svg`} alt="Logo" />
           <p>
             Streamline your workflow and track progress effortlessly
             <br /> with our all-in-one task management app.
@@ -18,8 +18,8 @@ const Login: React.FC = () => {
 
       {/* Right Side - Background Circles */}
       <div className="bg-circles">
-        <img className="circles-bg" src="/circles_bg.svg" alt="Background Circles" />
-        <img className="task-view" src="/task_list_view.svg" alt="Task View" />
+        <img className="circles-bg" src={`${process.env.PUBLIC_URL}/circles_bg.svg`} alt="Background Circles" />
+        <img className="task-view" src={`${process.env.PUBLIC_URL}/task_list_view.svg`} alt="Task View" />
       </div>
     </div>
   );

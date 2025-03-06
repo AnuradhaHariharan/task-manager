@@ -64,9 +64,27 @@ const TaskCard = ({
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id });
   const [isOpen, setIsOpen] = useState(false);
-  const today = new Date();
-  const formattedDate = new Intl.DateTimeFormat("en-GB").format(today); // "DD/MM/YYYY"
-  console.log(formattedDate);
+  const formatDueDate = (dueDate: string) => {
+    if (!dueDate) return "Invalid Date"; // Handle missing date
+  
+    // Parse "DD-MM-YYYY" string to a proper Date object
+    const [day, month, year] = dueDate.split("-").map(Number);
+    const taskDueDate = new Date(year, month - 1, day); // Month is 0-based in JS Dates
+  
+    if (isNaN(taskDueDate.getTime())) return "Invalid Date"; // Handle invalid date input
+  
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to midnight
+    taskDueDate.setHours(0, 0, 0, 0); // Reset time to midnight
+  
+    const diffInDays = Math.floor((taskDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  
+    if (diffInDays === 0) return "Today";
+    if (diffInDays === 1) return "Tomorrow";
+    if (diffInDays < 0) return "❗ Overdue";
+  
+    return dueDate; // Return in "DD-MM-YYYY" format
+  };
 
   return (
     <div ref={setNodeRef} className="task-card">
@@ -102,11 +120,7 @@ const TaskCard = ({
         </span>
       </div>
       <div>
-        {formattedDate==task.dueDate ? (
-          <span>Today</span>
-        ) : (
-          <span>{task.dueDate}</span>
-        )}
+      <span>{formatDueDate(task.dueDate)}</span>
       </div>
       <div>
         <span className="task-status">{task.status}</span>

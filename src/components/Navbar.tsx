@@ -21,7 +21,7 @@ const Navbar: React.FC<NavbarProps> = ({ viewMode, setViewMode }) => {
     <div className="navbar">
       <div className="left-container">
       <div className="logo-container">
-        <img src="/logo.svg" alt="Logo" />
+      <img src={`${process.env.PUBLIC_URL}/logo.svg`} alt="Logo" />
      </div>
 
     
@@ -30,14 +30,14 @@ const Navbar: React.FC<NavbarProps> = ({ viewMode, setViewMode }) => {
           className={`list ${viewMode === "list" ? "active" : ""}`}
           onClick={() => setViewMode("list")}
         >
-          <img src="/list_icon.svg" alt="List View" />
+      <img src={`${process.env.PUBLIC_URL}/list_icon.svg`} alt="List View" />
           <p>List</p>
         </div>
         <div
           className={`group ${viewMode === "board" ? "active" : ""}`}
           onClick={() => setViewMode("board")}
         >
-          <img src="/group_view.svg" alt="Board View" />
+        <img src={`${process.env.PUBLIC_URL}/group_view.svg`} alt="Board View" />
           <p>Board</p>
         </div>
       </div>
@@ -45,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ viewMode, setViewMode }) => {
 
       <div className="profile">
         <div className="name_photo">
-          <img src={auth.currentUser?.photoURL || "/default-avatar.png"} alt="Profile" />
+        <img src={`${process.env.PUBLIC_URL}/user-img.png`} alt="Profile" />
           <span>{auth.currentUser?.displayName}</span>
         </div>
         <button onClick={handleLogout} className="logout">

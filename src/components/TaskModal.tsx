@@ -25,6 +25,7 @@ interface TaskModalProps {
   task: Task | null;
   onClose: () => void;
   onSave: (updatedTask: Task) => void;
+  createdAt: string; // Add this line if needed
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
@@ -33,24 +34,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
   const [changeLog, setChangeLog] = useState<Task["changeLog"]>([]);
 
   useEffect(() => {
-    const fetchTask = async () => {
-      if (task) {
-        try {
-          const taskRef = doc(db, "tasks", task.id);
-          const taskSnap = await getDoc(taskRef);
-          if (taskSnap.exists()) {
-            const updatedTask = taskSnap.data() as Task;
-            setEditedTask(updatedTask);
-            setChangeLog(updatedTask.changeLog || []);
-          }
-        } catch (error) {
-          console.error("Error fetching task:", error);
-        }
-      }
-    };
+    if (task) {
+      setEditedTask(task);  // Use task prop when opening modal
+      setChangeLog(task.changeLog || []);
+    }
+  }, [task]);
   
-    fetchTask();
-  }, [task]); 
   if (!task || !editedTask) return null;
 
   const formatDate = (date: string | number | Date) =>
@@ -62,20 +51,33 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
       hour12: true,
     });
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setPendingChanges((prev) => ({ ...prev, [name]: value }));
-  };
+    const formatDueDate = (date: string | number | Date) => {
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+      const year = d.getFullYear();
+      
+      return `${day}-${month}-${year}`;
+    };
+
+    const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+      const { name, value } = e.target;
+      
+      // Convert date to DD-MM-YYYY before storing
+      const formattedValue = name === "dueDate" ? formatDueDate(value) : value;
+      
+      setPendingChanges((prev) => ({ ...prev, [name]: formattedValue }));
+    };
+    
 
   const handleSave = async () => {
     if (editedTask) {
+      console.log(editedTask+"  edited")
       const timestamp = new Date().toISOString();
-  
-      // Map pending changes into changeLog entries
+    
+      // Generate change log entries only for updated fields
       const newChangeLogEntries = Object.keys(pendingChanges).map((field) => ({
         field,
         oldValue: (editedTask as any)[field] || "N/A",
@@ -85,12 +87,25 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
   
       try {
         const taskRef = doc(db, "tasks", editedTask.id);
+        
+        // Fetch the latest task data from Firestore
+        const taskSnap = await getDoc(taskRef);
+        if (!taskSnap.exists()) {
+          console.error("Task not found in Firestore");
+          return;
+        }
+        
+        const existingTaskData = taskSnap.data() as Task;
+        const existingChangeLog = existingTaskData.changeLog || [];
   
-        // Update Firestore using arrayUnion to append changeLog instead of replacing it
+        // Merge old and new change logs
+        const updatedChangeLog = [...existingChangeLog, ...newChangeLogEntries];
+  
+        // Update Firestore
         await updateDoc(taskRef, {
-          ...pendingChanges, // Update only changed fields
+          ...pendingChanges,  // Update only changed fields
           lastUpdated: timestamp,
-          changeLog: arrayUnion(...newChangeLogEntries),
+          changeLog: updatedChangeLog, // Merge change log
         });
   
         // Update local state
@@ -98,7 +113,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
           ...editedTask,
           ...pendingChanges,
           lastUpdated: timestamp,
-          changeLog: [...changeLog, ...newChangeLogEntries],
+          changeLog: updatedChangeLog, // Updated change log
         };
   
         onSave(updatedTask); // Update UI
@@ -108,23 +123,25 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSave }) => {
       }
     }
   };
+  
+
   const convertToISODate = (dateStr: string) => {
     if (!dateStr) return ""; // Handle empty value
-    const parts = dateStr.split("/");
+    const parts = dateStr.split("-"); // Assuming stored format is DD-MM-YYYY
     if (parts.length === 3) {
-      const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to YYYY-MM-DD
+      const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to YYYY-MM-DD
       const dateObj = new Date(formattedDate);
-      return !isNaN(dateObj.getTime())
-        ? dateObj.toISOString().split("T")[0]
-        : "";
+      return !isNaN(dateObj.getTime()) ? formattedDate : "";
     }
     return "";
   };
+  
   const handleCancel = () => {
     setPendingChanges({}); // Reset changes
     setEditedTask(task); // Revert to original task
     onClose(); // Close modal
   };
+  console.log(editedTask.dueDate +"due date")
   
   return (
     <div className="modal-overlay">

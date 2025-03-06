@@ -28,6 +28,28 @@ const TaskForm: React.FC = () => {
     setLoading(true);
     setError("");
 
+    const formatDate = (date: string) => {
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    const today = new Date();
+    console.log(today)
+    today.setHours(0, 0, 0, 0); 
+
+  const selectedDate = dueDate ? new Date(dueDate) : today;
+  selectedDate.setHours(0, 0, 0, 0); // Remove time part for comparison
+
+  if (selectedDate < today) {
+    alert("Due date cannot be in the past.");
+    setLoading(false);
+    return; // Stop form submission if the date is in the past
+  }
+
+
     const user = auth.currentUser;
     if (!user) {
       setError("User not authenticated.");
@@ -59,7 +81,9 @@ const TaskForm: React.FC = () => {
             // Get file URL when upload completes
             fileUrl = await getDownloadURL(uploadTaskInstance.snapshot.ref);
 
-            const formattedDueDate = dueDate ? new Date(dueDate) : new Date();
+            const formattedDueDate = dueDate ? formatDate(dueDate) : formatDate(new Date().toISOString());
+            const formattedCreatedAt = formatDate(new Date().toISOString());
+
 
             await addDoc(collection(db, "tasks"), {
               title,
@@ -69,7 +93,7 @@ const TaskForm: React.FC = () => {
               userId: user.uid,
               attachment: fileUrl,
               dueDate: formattedDueDate,
-              createdAt: new Date().toISOString(),
+              createdAt: formattedCreatedAt, 
             });
 
             // Reset form fields
@@ -84,7 +108,8 @@ const TaskForm: React.FC = () => {
           }
         );
       } else {
-        const formattedDueDate = dueDate ? new Date(dueDate) : new Date();
+        const formattedDueDate = dueDate ? formatDate(dueDate) : formatDate(new Date().toISOString());
+        const formattedCreatedAt = formatDate(new Date().toISOString());
 
         await addDoc(collection(db, "tasks"), {
           title,
@@ -94,7 +119,7 @@ const TaskForm: React.FC = () => {
           userId: user.uid,
           attachment: fileUrl,
           dueDate: formattedDueDate,
-          createdAt: new Date().toISOString(),
+          createdAt: formattedCreatedAt, 
         });
 
         // Reset form fields
