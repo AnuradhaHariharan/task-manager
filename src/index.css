@@ -57,9 +57,9 @@ body {
       position: absolute;
       z-index: 2;
       right: 0;
-      width: 75%;
+      width: 85%;
       height: 80%;
-      transform: translateY(2rem);
+      transform: translateY(7rem);
     }
   }
 }
