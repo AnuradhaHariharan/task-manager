@@ -73,6 +73,7 @@
       word-wrap: normal;
       padding: .5rem;
       border-radius: 20px;
+      font-size: .8rem;
     }
   }
   .task-status {

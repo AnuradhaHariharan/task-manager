@@ -27,6 +27,7 @@
     display: flex;
     gap: 2.5rem;
     margin-left: 5px;
+    cursor: pointer;
 }
 .view-toggle span {
   cursor: pointer;
@@ -58,15 +59,19 @@
 }
 
 .search-input {
-  padding: .2rem 1rem;
+  padding: .5rem;
   border-radius: 40px;
   border: .5px solid black;
+  font-size: .8rem;
+  height: 2.5rem;
 }
 .add-task-btn {
   border-radius: 40px;
-  padding: .8rem 3rem;
+  padding: .4rem 3rem;
   background: purple;
   color: white;
+  height: 2.5rem;
+  font-size: .8rem;
 }
 
 

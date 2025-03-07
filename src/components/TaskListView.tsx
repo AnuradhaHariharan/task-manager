@@ -135,7 +135,7 @@ const TaskCard = ({
           {/* Dropdown Menu */}
           {isOpen && (
             <div className="dropdown-menu">
-              <button className="dropdown-item">✏️ Edit</button>
+              <button className="dropdown-item"  onClick={() => handleTaskClick(task)}>✏️ Edit</button>
               <button
                 className="dropdown-item"
                 onClick={() => deleteTask(task.id)}
@@ -152,7 +152,7 @@ const TaskCard = ({
 
 const TaskListView: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [allTasks, setAllTasks] = useState<TaskType[]>([]); 
+  const [allTasks, setAllTasks] = useState<Task[]>([]); 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState({
     Todo: true,
@@ -163,6 +163,8 @@ const TaskListView: React.FC = () => {
   const [taskStatus, setTaskStatus] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedDueDate, setSelectedDueDate] = useState<string>("All");
+  const [searchText,setSearchText]=useState<string>("");
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) {
@@ -246,6 +248,69 @@ const TaskListView: React.FC = () => {
       setTasks(filteredTasks);
     }
   };
+
+  const handleDateChangeFilter = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selectedDateFilter = event.target.value;
+    setSelectedDueDate(selectedDateFilter)
+    console.log(selectedDateFilter)
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+  
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday as start of the week
+  
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Saturday)
+  
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of the month
+  
+    if (!selectedDateFilter || selectedDateFilter === "Due Date") {
+      setTasks(allTasks);
+    } else {
+      const filteredTasks = allTasks.filter((task) => {
+        const [day, month, year] = task.dueDate.split("-").map(Number);
+        const taskDate = new Date(year, month - 1, day); // Month is 0-based
+  
+        switch (selectedDateFilter) {
+          case "today":
+            return taskDate.toDateString() === today.toDateString();
+          case "tomorrow":
+            return taskDate.toDateString() === tomorrow.toDateString();
+          case "this-week":
+            return taskDate >= startOfWeek && taskDate <= endOfWeek;
+          case "this-month":
+            return taskDate >= startOfMonth && taskDate <= endOfMonth;
+          default:
+            return true;
+        }
+      });
+  
+      setTasks(filteredTasks);
+    }
+  };
+  
+
+  const handleSearchFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const searchValue = event.target.value.toLowerCase();
+    setSearchText(searchValue);
+    console.log(searchText)
+  
+    if (searchValue === "") {
+      setTasks(allTasks);
+    } else {
+      const filteredTasks = allTasks.filter((task) =>
+        task.title.toLowerCase().includes(searchValue) ||
+      task.description.toLowerCase().includes(searchValue)
+      );
+      setTasks(filteredTasks);
+    }
+  };
+  
+
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
@@ -377,7 +442,7 @@ const TaskListView: React.FC = () => {
             <option value="work">Work</option>
             <option value="personal">Personal</option>
           </select>
-          <select className="filter-dropdown">
+          <select className="filter-dropdown" value={selectedDueDate} onChange={handleDateChangeFilter}>
             <option value="">Due Date</option>
             <option value="today">Today</option>
             <option value="this-week">This Week</option>
@@ -385,7 +450,7 @@ const TaskListView: React.FC = () => {
           </select>
         </div>
         <div className="right-side">
-          <input type="text" placeholder="Search " className="search-input" />
+          <input type="text" placeholder="Search " className="search-input"  value={searchText} onChange={handleSearchFilter}/>
           <TaskForm />
         </div>
       </div>

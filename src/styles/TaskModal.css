@@ -162,9 +162,6 @@
 .task-edit-form input, .task-edit-form textarea, .task-edit-form select {
   font-size: .5rem;
 }
-.buttons {
-
-}
 
 .cancel-btn,.submit-btn{
   padding: .2rem .5rem;

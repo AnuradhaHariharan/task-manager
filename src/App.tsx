@@ -6,7 +6,6 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./Auth/login.tsx";
-import Profile from "./Auth/profile.tsx";
 import Dashboard from "./pages/Dashboard.tsx";  // Import Dashboard
 import { auth } from "./Auth/firebase.tsx";
 
@@ -31,8 +30,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Login />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+              <Route path="/dashboard" element={user ? <Dashboard/> : <Navigate to="/login" />} />
             </Routes>
             <ToastContainer />
           </div>
