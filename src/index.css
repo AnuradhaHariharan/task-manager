@@ -28,6 +28,8 @@ body {
     align-items: flex-start;
     text-align: justify;
     gap: 1rem;
+  }
+  .sign-up{
     margin-top: 11rem;
   }
 
