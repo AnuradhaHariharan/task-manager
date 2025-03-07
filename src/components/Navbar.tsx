@@ -7,11 +7,9 @@ import "../styles/Navbar.css";
 interface NavbarProps {
   viewMode: "list" | "board";
   setViewMode: React.Dispatch<React.SetStateAction<"list" | "board">>;
-  category: string;
-  setCategory: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ viewMode, setViewMode, category, setCategory }) => {
+const Navbar: React.FC<NavbarProps> = ({ viewMode, setViewMode }) => {
   const navigate = useNavigate();
   const handleLogout = async () => {
     await auth.signOut();
