@@ -74,6 +74,8 @@ body {
   .sign-up {
     align-items: anchor-center !important;
     padding: 2rem !important;
+    display: flex;
+    margin-top: 0 !important;
   }
 
   .logo {
